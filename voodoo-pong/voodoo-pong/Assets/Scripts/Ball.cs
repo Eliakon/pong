@@ -34,6 +34,9 @@ public class Ball : MonoBehaviour
     [SerializeField]
     private UnityEvent endGame;
 
+    [SerializeField]
+    private UnityEvent showTarget;
+
     private Vector2 currentVelocity;
     private int leftScore;
     private int rightScore;
@@ -60,6 +63,7 @@ public class Ball : MonoBehaviour
         leftScore = 0;
         rightScore = 0;
         startGame.Invoke();
+        showTarget.Invoke();
     }
 
     private void StartGameAfterDelay()
@@ -99,6 +103,13 @@ public class Ball : MonoBehaviour
         if (collision.gameObject.CompareTag("Wall"))
         {
             SetVelocity(currentVelocity.x, currentVelocity.y * -1);
+        }
+
+        if (collision.gameObject.CompareTag("Target"))
+        {
+            ChangeScore(lastPlayer == leftPlayer ? 1 : 0, lastPlayer == rightPlayer ? 1 : 0);
+            showTarget.Invoke();
+            SetVelocity(currentVelocity.x, currentVelocity.y);
         }
 
         if (collision.gameObject.CompareTag("Lose"))
