@@ -29,10 +29,16 @@ public class Ball : MonoBehaviour
     private Text rightPlayerScore;
 
     [SerializeField]
+    private Text winText;
+
+    [SerializeField]
     private UnityEvent startGame;
 
     [SerializeField]
     private UnityEvent endGame;
+
+    [SerializeField]
+    private UnityEvent gameOver;
 
     [SerializeField]
     private UnityEvent showTarget;
@@ -62,6 +68,7 @@ public class Ball : MonoBehaviour
         SetVelocity(speed, 0);
         leftScore = 0;
         rightScore = 0;
+        ChangeScore(0, 0);
         startGame.Invoke();
         showTarget.Invoke();
     }
@@ -108,8 +115,11 @@ public class Ball : MonoBehaviour
         if (collision.gameObject.CompareTag("Target"))
         {
             ChangeScore(lastPlayer == leftPlayer ? 1 : 0, lastPlayer == rightPlayer ? 1 : 0);
-            showTarget.Invoke();
-            SetVelocity(currentVelocity.x, currentVelocity.y);
+            if (!CheckGameOver())
+            {
+                showTarget.Invoke();
+                SetVelocity(currentVelocity.x, currentVelocity.y);
+            }
         }
 
         if (collision.gameObject.CompareTag("Lose"))
@@ -118,18 +128,27 @@ public class Ball : MonoBehaviour
             SetVelocity(0, 0);
             ChangeScore(lastPlayer == leftPlayer ? 1 : 0, lastPlayer == rightPlayer ? 1 : 0);
             rectTransform.localPosition = Vector2.zero;
-
-            if (leftScore >= winScore)
+            if (!CheckGameOver())
             {
-                Debug.Log("Left player wins!");
-                return;
+                StartGameAfterDelay();
+            }
+        }
+    }
+
+    private bool CheckGameOver()
+    {
+        if (leftScore >= winScore)
+            {
+                winText.text = "Left won";
+                gameOver.Invoke();
+                return true;
             }
             if (rightScore >= winScore)
             {
-                Debug.Log("Right player wins!");
-                return;
+                winText.text = "Right won";
+                gameOver.Invoke();
+                return true;
             }
-            StartGameAfterDelay();
-        }
+            return false;
     }
 }
