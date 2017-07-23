@@ -1,11 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class Ball : MonoBehaviour
 {
     private const float speed = 4f;
     private const float velocityMultiplier = 0.05f;
+    private const int winScore = 5;
 
     [SerializeField]
     private Rigidbody2D rigibody;
@@ -13,8 +16,28 @@ public class Ball : MonoBehaviour
     [SerializeField]
     private RectTransform rectTransform;
 
-    private bool isMoving = false;
+    [SerializeField]
+    private GameObject leftPlayer;
+
+    [SerializeField]
+    private GameObject rightPlayer;
+
+    [SerializeField]
+    private Text leftPlayerScore;
+
+    [SerializeField]
+    private Text rightPlayerScore;
+
+    [SerializeField]
+    private UnityEvent startGame;
+
+    [SerializeField]
+    private UnityEvent endGame;
+
     private Vector2 currentVelocity;
+    private int leftScore;
+    private int rightScore;
+    private GameObject lastPlayer;
 
     private void SetVelocity(float x, float y)
     {
@@ -22,9 +45,37 @@ public class Ball : MonoBehaviour
         rigibody.velocity = currentVelocity;
     }
 
+    private void ChangeScore(int addToLeftScore, int addToRightScore)
+    {
+        leftScore += addToLeftScore;
+        rightScore += addToRightScore;
+        leftPlayerScore.text = leftScore.ToString();
+        rightPlayerScore.text = rightScore.ToString();
+    }
+
     public void StartGame()
     {
+        lastPlayer = leftPlayer;
         SetVelocity(speed, 0);
+        leftScore = 0;
+        rightScore = 0;
+        startGame.Invoke();
+    }
+
+    private void StartGameAfterDelay()
+    {
+        StartCoroutine(StartGameAfterDelayCoroutine());
+    }
+
+    private IEnumerator StartGameAfterDelayCoroutine()
+    {
+        yield return new WaitForSeconds(1f);
+        var velocity = speed;
+        if (lastPlayer == rightPlayer) {
+            velocity *= -1;
+        }
+        SetVelocity(velocity, 0);
+        startGame.Invoke();
     }
 
     public void OnCollisionEnter2D(Collision2D collision)
@@ -42,11 +93,32 @@ public class Ball : MonoBehaviour
             }
 
             SetVelocity(velocityX, velocityY);
+            lastPlayer = collision.gameObject;
         }
 
         if (collision.gameObject.CompareTag("Wall"))
         {
             SetVelocity(currentVelocity.x, currentVelocity.y * -1);
+        }
+
+        if (collision.gameObject.CompareTag("Lose"))
+        {
+            endGame.Invoke();
+            SetVelocity(0, 0);
+            ChangeScore(lastPlayer == leftPlayer ? 1 : 0, lastPlayer == rightPlayer ? 1 : 0);
+            rectTransform.localPosition = Vector2.zero;
+
+            if (leftScore >= winScore)
+            {
+                Debug.Log("Left player wins!");
+                return;
+            }
+            if (rightScore >= winScore)
+            {
+                Debug.Log("Right player wins!");
+                return;
+            }
+            StartGameAfterDelay();
         }
     }
 }
